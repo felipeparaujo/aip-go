@@ -66,6 +66,17 @@ func TestValidateRequiredFieldsWithMask(t *testing.T) {
 			),
 		)
 	})
+	t.Run("ok - optional primitive annotated with REQUIRED set to default value", func(t *testing.T) {
+		t.Parallel()
+		zero := int64(0)
+		assert.NilError(
+			t,
+			ValidateRequiredFieldsWithMask(
+				&examplefreightv1.Site{PersonnelCount: &zero},
+				&fieldmaskpb.FieldMask{Paths: []string{"personnel_count"}},
+			),
+		)
+	})
 	t.Run("missing field", func(t *testing.T) {
 		t.Parallel()
 		assert.Error(
