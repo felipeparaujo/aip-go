@@ -100,6 +100,17 @@ func TestValidateRequiredFieldsWithMask(t *testing.T) {
 			"missing required field: shipment.origin_site",
 		)
 	})
+	t.Run("missing optional field annotated with required", func(t *testing.T) {
+		t.Parallel()
+		assert.Error(
+			t,
+			ValidateRequiredFieldsWithMask(
+				&examplefreightv1.Site{},
+				&fieldmaskpb.FieldMask{Paths: []string{"personnel_count"}},
+			),
+			"missing required field: personnel_count",
+		)
+	})
 	t.Run("missing nested not in mask", func(t *testing.T) {
 		t.Parallel()
 		assert.NilError(
