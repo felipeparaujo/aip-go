@@ -13,8 +13,11 @@ import (
 	"google.golang.org/protobuf/reflect/protoregistry"
 )
 
-// ValidateResourceReferences validates the resource reference fields in a message.
-func ValidateResourceReferences(message proto.Message) error {
+// ValidateResourceReferencesWithValidator validates the resource reference fields in a message.
+// `validator“ receives the pattern and actual value of the reference, along with the path of the message.
+// It runs only if the resource reference matches the expected pattern and should be used for validating
+// if variables follow expected patterns
+func ValidateResourceReferencesWithValidator(message proto.Message, validator func(pattern string, value string, messagePath string) error) error {
 	return protorange.Range(message.ProtoReflect(), func(values protopath.Values) error {
 		curr := values.Index(-1)
 		var field protoreflect.FieldDescriptor
@@ -53,8 +56,16 @@ func ValidateResourceReferences(message proto.Message) error {
 				if resource.Type != resourceReferenceAnnotation.GetType() {
 					return true
 				}
+
+				// trim the message type from the path
+				msgPath := strings.TrimLeft(strings.TrimLeftFunc(values.Path.String(), func(r rune) bool {
+					return r != ')'
+				}), ").")
+
 				for _, pattern := range resource.Pattern {
 					if resourcename.Match(pattern, fieldValue) {
+						// validate IDs
+						errValidate = validator(pattern, fieldValue, msgPath)
 						return false
 					}
 				}
@@ -72,4 +83,9 @@ func ValidateResourceReferences(message proto.Message) error {
 		)
 		return errValidate
 	})
+}
+
+// ValidateResourceReferences validates the resource reference fields in a message.
+func ValidateResourceReferences(message proto.Message) error {
+	return ValidateResourceReferencesWithValidator(message, func(p, v, m string) error { return nil })
 }
